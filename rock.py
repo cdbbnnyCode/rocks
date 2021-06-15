@@ -36,8 +36,9 @@ def main():
 
     bounding_boxes = [
     #              left top right bottom
-    # for example, (50,  50, 500,   500)
-
+    (0, 110, 528, 160),
+    (189, 320, 720, 375),
+    (0, 543, 529, 595)
     ]
 
     for i in range(24):
