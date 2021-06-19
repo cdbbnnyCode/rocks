@@ -21,71 +21,48 @@ def gen_points(center, min_radius, max_radius, n):
 
     return pts
 
+class Rock:
+    def __init__(self, radius, n_verts, variation, texture):
+        self.radius = radius
+        self.points = gen_points((radius, radius), radius - variation, radius, n_verts)
+        # width and height of our image
+        imsize = 2 * radius
+
+        # crop out a bit of the texture
+        crop_x = int(random.random() * (texture.width - imsize))
+        crop_y = int(random.random() * (texture.height - imsize))
+        rock_img = texture.crop((crop_x, crop_y, crop_x + imsize, crop_y + imsize))
+
+        alpha_img = Image.new("L", (imsize, imsize), 0)
+        draw = ImageDraw.Draw(alpha_img)
+
+        # draw rock in the alpha channel
+        draw.polygon(self.points, 255, 255)
+        rock_img.putalpha(alpha_img)
+
+        shadow_img = Image.new("RGBA", (imsize, imsize), (0, 0, 0, 127))
+        shadow_base = Image.new("RGBA", (imsize, imsize), (0, 0, 0, 0))
+        shadow_img = Image.composite(shadow_img, shadow_base, alpha_img)
+
+        self.image = Image.new("RGBA", (imsize+2, imsize+2))
+        self.image.alpha_composite(shadow_img, (2, 2))
+        self.image.alpha_composite(rock_img, (0, 0))
+
+        # draw a border
+        # border_img = Image.new("RGBA", (imsize, imsize), (0, 0, 0, 0))
+        # draw = ImageDraw.Draw(border_img)
+        # draw.polygon(self.points, (0, 0, 0, 0), (64, 64, 64, 127))
+        # self.image.alpha_composite(border_img)
+        # self.image = border_img
+
+    def save(self):
+        self.image.save("rock_indiv.png")
+
 def main():
-    w = 720
-    h = 720
-    # image = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-    image = Image.open("grass.png")
-
-    draw = ImageDraw.Draw(image)
-
-    sizes = [8, 12, 16]
-    n_segments = 10
-
-    existing_rocks = []
-
-    bounding_boxes = [
-    #              left top right bottom
-    # for example, (50,  50, 500,   500)
-
-    ]
-
-    for i in range(24):
-        rad = sizes[int(random.random() * 3)]
-        while True:
-            print("choosing position for #%d" % i)
-            center_x = rad + int(random.random() * (w - 2*rad))
-            center_y = rad + int(random.random() * (h - 2*rad))
-
-            collision = False
-            for rock in existing_rocks:
-                # each rock is a tuple of (x, y, r)
-                dist = sqrt((center_x - rock[0])**2 + (center_y - rock[1])**2)
-                min_dist = rad + rock[2]
-                if dist <= min_dist + 3:
-                    collision = True
-                    break
-
-            for box in bounding_boxes:
-                # bounding box for the circle
-                rock_box = (center_x - rad, center_y - rad, center_x + rad, center_y + rad)
-                LEFT = 0
-                TOP = 1
-                RIGHT = 2
-                BOT = 3
-
-                if box[LEFT] < rock_box[RIGHT] \
-                        and box[RIGHT] > rock_box[LEFT] \
-                        and box[TOP] < rock_box[BOT] \
-                        and box[BOT] > rock_box[TOP]:
-                    collision = True
-                    break
-
-
-            if not collision:
-                break
-
-        # we now have good rock coordinates
-        pts = gen_points((center_x, center_y), rad * 0.5, rad, n_segments)
-        draw.polygon(pts, (0x7f, 0x7f, 0x7f, 0x00), (0x00, 0x00, 0x00, 0x7f))
-        existing_rocks.append((center_x, center_y, rad))
-
-    base = Image.open("rock_texture.png")
-    base = base.rotate(int(random.random() * 360))
-    base = base.crop((152, 152, 872, 872))
-    base.alpha_composite(image)
-
-    base.save("rocks.png")
+    tex = Image.open("rock_texture.png")
+    r = 24
+    rock = Rock(r, 10, r//2, tex)
+    rock.save()
 
 if __name__ == '__main__':
     main()
